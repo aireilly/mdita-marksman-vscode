@@ -87,7 +87,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	// Setup commands
 	let restartServerCmd = vscode.commands.registerCommand(`${extId}.restartServer`, async () => {
-		stopClient(client);
+		await stopClient(client);
 		updateStatus(statusBarItem, defaultStatus);
 
 		client = await connectToServer(context, statusBarItem);
@@ -423,7 +423,7 @@ async function stopClient(client: LanguageClient | null) {
 		await client.stop();
 		client.outputChannel.dispose();
 		client.traceOutputChannel.dispose();
-	}
+}
 }
 
 export async function deactivate() {
