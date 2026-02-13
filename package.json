@@ -7,8 +7,8 @@
     "color": "#dbeae9",
     "theme": "light"
   },
-  "publisher": "arr",
-  "version": "0.4.0",
+  "publisher": "vscode-aidanreilly",
+  "version": "0.0.1",
   "license": "SEE LICENSE IN LICENSE",
   "engines": {
     "vscode": "^1.54.0"

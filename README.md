@@ -1,62 +1,71 @@
 # MDITA Marksman VSCode
 
-Integrates [MDITA Marksman][mn] language server into VSCode for Markdown and
-MDITA authoring with cross-references, completion, diagnostics, DITA front
-matter support, and more.
+> [!NOTE]
+> This project is a fork of [marksman-vscode](https://github.com/artempyanykh/marksman-vscode) by Artem Pyanykh, extended with support for [Lightweight DITA (LwDITA)][lwdita] MDITA authoring. 
+> The upstream extension provides Markdown language-server features via [Marksman][upstream]; this fork replaces the server with [MDITA Marksman][mn], which adds MDITA-specific capabilities such as `.mditamap` support and DITA front-matter handling.
 
-See the [project page][mn] for more detailed information.
+Integrates the [MDITA Marksman][mn] language server into VSCode for Markdown and
+MDITA authoring.
 
-## Screenshots
+## Features
 
-- Hover preview:
-  ![Hover](./assets/readme/vsc-wiki-hover.png)
-- Completion:
-
-  - Wiki link to another document:
-    ![Completion for wiki](./assets/readme/vsc-wiki-compl.png)
-
-  - Wiki link to a subsection of the current document:
-    ![Completion for wiki heading](./assets/readme/vsc-wiki-heading-compl.png)
-
-  - Reference link:
-    ![Completion for ref link](./assets/readme/vsc-ref-compl.png)
-- "Show References":
-  ![Show references](./assets/readme/vsc-find-references.png)
-- Project-wide diagnostics for broken wiki-links:
-  ![Diagnostics](./assets/readme/vsc-diag.png)
+- **Cross-references**: navigate and manage references between documents.
+- **Completion**: context-aware suggestions for wiki links, reference links, and headings.
+- **Diagnostics**: real-time warnings for broken links and other issues.
+- **Hover preview**: inline preview of linked content.
+- **Find references**: locate all references to a symbol across your workspace.
+- **Follow links**: navigate through document links.
+- **MDITA Map support**: dedicated language support for `.mditamap` files.
 
 ## Installation
 
-1. **Get `mdita-marksman` server binary**.
-   The extension will try to automatically download the MDITA Marksman language
-   server from GH releases. This is the easiest way to get started.
+1. Install the extension from the VSCode Marketplace or from a `.vsix` package:
+   ```
+   code --install-extension mdita-marksman-0.0.1.vsix
+   ```
+2. Add a `.mdita-marksman.toml` file to your workspace root folder. The
+   extension activates only when this file is present to avoid running on
+   unrelated Markdown files.
+3. The extension automatically downloads the compatible `mdita-marksman` language
+   server binary from [GitHub releases][mn-releases]. Supported platforms:
+   - Windows x64
+   - macOS x64 and ARM64
+   - Linux x64 and ARM64
 
-   An alternative is to either download `mdita-marksman` binary from the
-   [releases page][mn-releases] or to build `mdita-marksman` from source. Put
-   it somewhere in your `PATH` and you should be good to go.
-2. **Add `.mdita-marksman.toml` to your workspace root folder**.
-   The extension is automatically activated only when `.mdita-marksman.toml`
-   file is present. This is done to avoid running MDITA Marksman on random
-   Markdown files, but rather only inside your project folder.
+   Alternatively, you can place the `mdita-marksman` binary somewhere on your
+   `PATH`, or build it from [source][mn].
+
+## Commands
+
+- **MDITA Marksman: Restart Server** - restart the language server.
+- **MDITA Marksman: Show Output** - display the server output log.
 
 ## Extension Settings
 
-- **Custom Command**: allows to specify a custom command to start
-  `mdita-marksman`. Mostly useful for development of `mdita-marksman` itself.
-- **Custom Command Dir**: allows to specify a CWD for the command above. For
-  development it's convenient to set the command to `dotnet run` and the command
-  dir to the dir where `mdita-marksman` sources are.
+- **Custom Command** (`mdita-marksman.customCommand`): specify a custom command
+  to start the language server.
+- **Custom Command Dir** (`mdita-marksman.customCommandDir`): set the working
+  directory for the custom command.
+- **Trace: Server** (`mdita-marksman.trace.server`): set the verbosity level for
+  server communication (`off`, `messages`, or `verbose`).
 
 ## Development
-- **Set things up**:
-  - Run `npm install` to get the necessary packages.
-  - Run `npm watch` or hit F5 to do development/debugging.
-- **Package and release**:
-  - Install vsce via `npm install -g vsce`.
-  - Run `vsce package` to package the extension.
-  - Run `vsce publish` to publish the packaged archive.
-- **Local installation**:
-  - Run `code --install-extension [path-to-vsix]` to install the locally built extension.
+
+- Run `npm install` to install dependencies.
+- Run `npm run webpack-dev` or press F5 to start development/debugging.
+- Run `npm run lint` to lint the source.
+
+### Packaging
+
+1. Install vsce: `npm install -g @vscode/vsce`
+2. Package: `vsce package`
+3. Publish: `vsce publish`
+
+## License
+
+[MIT](LICENSE)
 
 [mn]: https://github.com/aireilly/mdita-marksman
 [mn-releases]: https://github.com/aireilly/mdita-marksman/releases
+[upstream]: https://github.com/artempyanykh/marksman
+[lwdita]: https://docs.oasis-open.org/dita/LwDITA/v1.0/LwDITA-v1.0.html
