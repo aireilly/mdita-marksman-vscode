@@ -19,10 +19,8 @@ MDITA authoring.
 
 ## Installation
 
-1. Install the extension from the VSCode Marketplace or from a `.vsix` package:
-   ```
-   code --install-extension mdita-marksman-0.0.1.vsix
-   ```
+1. Install the extension from the VSCode Marketplace.
+
 2. Add a `.mdita-marksman.toml` file to your workspace root folder. The
    extension activates only when this file is present to avoid running on
    unrelated Markdown files.

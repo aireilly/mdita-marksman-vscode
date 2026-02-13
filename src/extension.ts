@@ -177,7 +177,25 @@ async function connectToServer(context: vscode.ExtensionContext, status: vscode.
 		documentSelector: [
 			{ scheme: "file", language: "markdown" },
 			{ scheme: "file", language: "mditamap" }
-		]
+		],
+		middleware: {
+			executeCommand: async (command, args, next) => {
+				if (command === 'mdita-marksman.findReferences') {
+					if (args && args.length > 0) {
+						return findReferencesCmdImpl(args[0] as FindReferencesData);
+					}
+				} else if (command === 'mdita-marksman.followLink') {
+					if (args && args.length > 0) {
+						return followLinkCmdImpl(args[0] as FollowLinkData);
+					}
+				} else if (command === 'mdita-marksman.createFile') {
+					if (args && args.length > 0) {
+						return createFileCmdImpl(args[0] as string);
+					}
+				}
+				return next(command, args);
+			}
+		}
 	};
 
 	return createClient(serverOptions, clientOptions);
