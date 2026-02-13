@@ -103,7 +103,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	});
 	let findReferencesCmd = vscode.commands.registerCommand(`${extId}.findReferences`, findReferencesCmdImpl);
 	let followLinkCmd = vscode.commands.registerCommand(`${extId}.followLink`, followLinkCmdImpl);
-	let createFileCmd = vscode.commands.registerCommand(`${extId}.createFile`, createFileCmdImpl);
 
 	if (client) {
 		context.subscriptions.push(client.start());
@@ -112,8 +111,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		restartServerCmd,
 		showOutputCmd,
 		findReferencesCmd,
-		followLinkCmd,
-		createFileCmd
+		followLinkCmd
 	);
 }
 
