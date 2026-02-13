@@ -35,10 +35,10 @@ type StatusParams = {
 const defaultStatus: StatusParams = { state: "init", docCount: 0 };
 const deadStatus: StatusParams = { state: "dead", docCount: 0 };
 
-const extId = "marksman";
-const extName = "Marksman";
-const compatibleServerRelease = "2023-12-09";
-const releaseBaseUrl = "https://github.com/artempyanykh/marksman/releases/download";
+const extId = "mdita-marksman";
+const extName = "MDITA Marksman";
+const compatibleServerRelease = "v0.0.1";
+const releaseBaseUrl = "https://github.com/aireilly/mdita-marksman/releases/download";
 
 const statusNotificationType = new NotificationType<StatusParams>("marksman/status");
 
@@ -156,7 +156,10 @@ async function connectToServer(context: vscode.ExtensionContext, status: vscode.
 
 	// Init LS client
 	let clientOptions: LanguageClientOptions = {
-		documentSelector: [{ scheme: "file", language: "markdown" }]
+		documentSelector: [
+			{ scheme: "file", language: "markdown" },
+			{ scheme: "file", language: "mditamap" }
+		]
 	};
 
 	return createClient(serverOptions, clientOptions);
@@ -202,9 +205,9 @@ function mkServerOptionsFromConfig(): ServerOptions | null {
 function serverBinName(): string {
 	let platform = os.platform();
 	if (platform === 'win32') {
-		return 'marksman.exe';
+		return 'mdita-marksman.exe';
 	} else if (platform === 'darwin' || platform === 'linux') {
-		return 'marksman';
+		return 'mdita-marksman';
 	} else {
 		throw new Error(`Unsupported platform: ${platform}`);
 	}
@@ -215,13 +218,15 @@ function releaseBinName(): string {
 	const arch = os.arch();
 
 	if (platform === 'win32' && arch === 'x64') {
-		return 'marksman.exe';
-	} else if (platform === 'darwin') {
-		return 'marksman-macos';
+		return 'mdita-marksman-win-x64.exe';
+	} else if (platform === 'darwin' && arch === 'arm64') {
+		return 'mdita-marksman-macos-arm64';
+	} else if (platform === 'darwin' && arch === 'x64') {
+		return 'mdita-marksman-macos-x64';
 	} else if (platform === 'linux' && arch === 'x64') {
-		return 'marksman-linux-x64';
+		return 'mdita-marksman-linux-x64';
 	} else if (platform === 'linux' && arch === 'arm64') {
-		return 'marksman-linux-arm64';
+		return 'mdita-marksman-linux-arm64';
 	} else {
 		throw new Error(`Unsupported platform: ${platform}`);
 	}
@@ -283,12 +288,12 @@ async function downloadServerFromGH(context: vscode.ExtensionContext): Promise<S
 
 	try {
 		await vscode.workspace.fs.stat(targetFile);
-		console.log("marksman binary is already downloaded");
+		console.log("mdita-marksman binary is already downloaded");
 	} catch {
 		// The file doesn't exist. Continue to download
 		await vscode.window.withProgress({
 			cancellable: false,
-			title: `Downloading marksman ${compatibleServerRelease} from GH`,
+			title: `Downloading mdita-marksman ${compatibleServerRelease} from GH`,
 			location: vscode.ProgressLocation.Notification
 		}, async (progress, _cancellationToken) => {
 			let lastPercent = 0;
@@ -306,7 +311,7 @@ async function downloadServerFromGH(context: vscode.ExtensionContext): Promise<S
 			command: serverPath
 		};
 	} catch {
-		console.error("Failed to download marksman server binary");
+		console.error("Failed to download mdita-marksman server binary");
 		return null;
 	}
 
