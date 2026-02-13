@@ -7,7 +7,7 @@
 Integrates the [MDITA Marksman][mn] language server into VSCode for Markdown and
 MDITA authoring.
 
-<img width="600" alt="image" src="https://github.com/user-attachments/assets/003534f7-8ea5-4cf4-8bde-fb5943cbcbb7" />
+<img width="600" alt="image" src="https://github.com/user-attachments/assets/72fad2af-1c38-4f33-b366-a852588b1edd" />
 
 ## Features
 
