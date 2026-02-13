@@ -16,6 +16,7 @@ import {
 } from 'vscode-languageclient/node';
 
 import * as os from 'os';
+import * as path from 'path';
 import * as which from 'which';
 import * as fs from 'fs';
 
@@ -102,6 +103,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	});
 	let findReferencesCmd = vscode.commands.registerCommand(`${extId}.findReferences`, findReferencesCmdImpl);
 	let followLinkCmd = vscode.commands.registerCommand(`${extId}.followLink`, followLinkCmdImpl);
+	let createFileCmd = vscode.commands.registerCommand(`${extId}.createFile`, createFileCmdImpl);
 
 	if (client) {
 		context.subscriptions.push(client.start());
@@ -110,7 +112,8 @@ export async function activate(context: vscode.ExtensionContext) {
 		restartServerCmd,
 		showOutputCmd,
 		findReferencesCmd,
-		followLinkCmd
+		followLinkCmd,
+		createFileCmd
 	);
 }
 
@@ -139,6 +142,21 @@ async function followLinkCmdImpl(data: FollowLinkData) {
 
 		);
 	}
+}
+
+async function createFileCmdImpl(uri: string) {
+	const parsed = vscode.Uri.parse(uri);
+	const filePath = parsed.fsPath;
+	const dirPath = path.dirname(filePath);
+
+	await fs.promises.mkdir(dirPath, { recursive: true });
+
+	if (!fs.existsSync(filePath)) {
+		await fs.promises.writeFile(filePath, '');
+	}
+
+	const doc = await vscode.workspace.openTextDocument(filePath);
+	await vscode.window.showTextDocument(doc);
 }
 
 async function connectToServer(context: vscode.ExtensionContext, status: vscode.StatusBarItem): Promise<LanguageClient | null> {
@@ -175,6 +193,7 @@ async function mkServerOptions(context: vscode.ExtensionContext): Promise<Server
 	if (binInPath) {
 		return {
 			command: binInPath,
+			args: ["server"],
 		};
 	}
 
@@ -308,7 +327,8 @@ async function downloadServerFromGH(context: vscode.ExtensionContext): Promise<S
 	try {
 		await vscode.workspace.fs.stat(targetFile);
 		return {
-			command: serverPath
+			command: serverPath,
+			args: ["server"],
 		};
 	} catch {
 		console.error("Failed to download mdita-marksman server binary");

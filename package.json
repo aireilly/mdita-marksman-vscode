@@ -28,7 +28,9 @@
   ],
   "activationEvents": [
     "workspaceContains:.mdita-marksman.toml",
-    "onCommand:mdita-marksman.restartServer"
+    "onCommand:mdita-marksman.restartServer",
+    "onLanguage:markdown",
+    "onLanguage:mditamap"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -41,6 +43,13 @@
         "extensions": [
           ".mditamap"
         ]
+      }
+    ],
+    "grammars": [
+      {
+        "language": "mditamap",
+        "scopeName": "text.html.markdown.mditamap",
+        "path": "./syntaxes/mditamap.tmLanguage.json"
       }
     ],
     "commands": [
