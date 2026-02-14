@@ -3,6 +3,7 @@ import {
 	ExecutableOptions,
 	URI,
 	StaticFeature,
+	FeatureState,
 	Position,
 	LanguageClient,
 	LanguageClientOptions,
@@ -12,12 +13,14 @@ import {
 	Location,
 	ClientCapabilities,
 	DocumentSelector,
-	ServerCapabilities
+	ServerCapabilities,
+	ErrorAction,
+	CloseAction
 } from 'vscode-languageclient/node';
 
 import * as os from 'os';
 import * as path from 'path';
-import * as which from 'which';
+import which from 'which';
 import * as fs from 'fs';
 
 import fetch from 'node-fetch';
@@ -73,15 +76,19 @@ class ExperimentalFeatures implements StaticFeature {
 	initialize(_capabilities: ServerCapabilities<any>, _documentSelector: DocumentSelector | undefined): void {
 	}
 
+	getState(): FeatureState {
+		return { kind: 'static' };
+	}
+
+	clear(): void {
+	}
+
 	dispose(): void {
 	}
 
 }
 
 export async function activate(context: vscode.ExtensionContext) {
-	// Register all commands first, before any async work, so they are
-	// always available and tracked in subscriptions even if the server
-	// fails to start.
 	context.subscriptions.push(
 		vscode.commands.registerCommand(`${extId}.restartServer`, async () => {
 			await stopClient(client);
@@ -89,17 +96,14 @@ export async function activate(context: vscode.ExtensionContext) {
 
 			client = await connectToServer(context, statusBarItem);
 			if (client) {
-				context.subscriptions.push(client.start());
+				await startClient(client, context);
 			}
 		}),
 		vscode.commands.registerCommand(`${extId}.showOutputChannel`, () => {
 			if (client) {
 				client.outputChannel.show(true);
 			}
-		}),
-		vscode.commands.registerCommand(`${extId}.findReferences`, findReferencesCmdImpl),
-		vscode.commands.registerCommand(`${extId}.followLink`, followLinkCmdImpl),
-		vscode.commands.registerCommand(`${extId}.createFile`, createFileCmdImpl)
+		})
 	);
 
 	// Create status bar
@@ -109,7 +113,36 @@ export async function activate(context: vscode.ExtensionContext) {
 	// Start language server
 	client = await connectToServer(context, statusBarItem);
 	if (client) {
-		context.subscriptions.push(client.start());
+		await startClient(client, context);
+	}
+}
+
+async function startClient(c: LanguageClient, context: vscode.ExtensionContext) {
+	try {
+		await c.start();
+		registerNotificationHandlers(c);
+	} catch (e) {
+		console.error('Failed to start language server:', e);
+		updateStatus(statusBarItem, deadStatus);
+	}
+
+	// Register server-invoked commands AFTER client.start() so we don't
+	// conflict with v9's ExecuteCommandFeature which registers commands
+	// from the server's executeCommandProvider capabilities. If v9
+	// already registered them, the try-catch silently handles it.
+	// If the server failed to start, we provide fallback handlers.
+	for (const [cmd, handler] of [
+		[`${extId}.findReferences`, findReferencesCmdImpl],
+		[`${extId}.followLink`, followLinkCmdImpl],
+		[`${extId}.createFile`, createFileCmdImpl],
+	] as [string, (...args: any[]) => any][]) {
+		try {
+			context.subscriptions.push(
+				vscode.commands.registerCommand(cmd, handler)
+			);
+		} catch {
+			// Already registered by ExecuteCommandFeature
+		}
 	}
 }
 
@@ -174,6 +207,18 @@ async function connectToServer(context: vscode.ExtensionContext, status: vscode.
 			{ scheme: "file", language: "markdown" },
 			{ scheme: "file", language: "mditamap" }
 		],
+		initializationFailedHandler(_error) {
+			console.error('Server initialization failed:', _error);
+			return false;
+		},
+		errorHandler: {
+			error(_error, _message, _count) {
+				return { action: ErrorAction.Shutdown, handled: true };
+			},
+			closed() {
+				return { action: CloseAction.DoNotRestart, handled: true };
+			}
+		},
 		middleware: {
 			executeCommand: async (command, args, next) => {
 				if (command === 'mdita-marksman.findReferences') {
@@ -351,23 +396,12 @@ async function downloadServerFromGH(context: vscode.ExtensionContext): Promise<S
 
 }
 
-async function findServerInPath(): Promise<string | null> {
-	let binName = serverBinName();
-	let inPath = new Promise<string>((resolve, reject) => {
-		which(binName, (err, path) => {
-			if (err) {
-				reject(err);
-			}
-			if (path === undefined) {
-				reject(new Error('which return undefined path'));
-			} else {
-				resolve(path);
-			}
-		});
-	});
-
-	let resolved = await inPath.catch((_) => null);
-	return resolved;
+function findServerInPath(): string | null {
+	try {
+		return which.sync(serverBinName());
+	} catch {
+		return null;
+	}
 }
 
 function createClient(serverOptions: ServerOptions, clientOptions: LanguageClientOptions): LanguageClient {
@@ -379,18 +413,17 @@ function createClient(serverOptions: ServerOptions, clientOptions: LanguageClien
 function configureClient(client: LanguageClient) {
 	client.registerFeature(new ExperimentalFeatures());
 
-	client.onReady().then(() => {
-		console.log('Client onReady');
-
-		client.onNotification(statusNotificationType, (statusParams) => {
-			console.log('Got marksman/status notification');
-			updateStatus(statusBarItem, statusParams);
-		});
-	});
 	client.onDidChangeState((ev) => {
 		if (ev.newState === State.Stopped) {
 			updateStatus(statusBarItem, deadStatus);
 		}
+	});
+}
+
+function registerNotificationHandlers(client: LanguageClient) {
+	client.onNotification(statusNotificationType, (statusParams) => {
+		console.log('Got marksman/status notification');
+		updateStatus(statusBarItem, statusParams);
 	});
 }
 
@@ -418,6 +451,7 @@ async function stopClient(client: LanguageClient | null) {
 	if (client) {
 		try {
 			await client.stop();
+			client.dispose();
 		} catch (e) {
 			console.error('Error stopping language client:', e);
 		}
