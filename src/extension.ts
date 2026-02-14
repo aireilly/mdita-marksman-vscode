@@ -79,35 +79,38 @@ class ExperimentalFeatures implements StaticFeature {
 }
 
 export async function activate(context: vscode.ExtensionContext) {
-	// Create a status
+	// Register all commands first, before any async work, so they are
+	// always available and tracked in subscriptions even if the server
+	// fails to start.
+	context.subscriptions.push(
+		vscode.commands.registerCommand(`${extId}.restartServer`, async () => {
+			await stopClient(client);
+			updateStatus(statusBarItem, defaultStatus);
+
+			client = await connectToServer(context, statusBarItem);
+			if (client) {
+				context.subscriptions.push(client.start());
+			}
+		}),
+		vscode.commands.registerCommand(`${extId}.showOutputChannel`, () => {
+			if (client) {
+				client.outputChannel.show(true);
+			}
+		}),
+		vscode.commands.registerCommand(`${extId}.findReferences`, findReferencesCmdImpl),
+		vscode.commands.registerCommand(`${extId}.followLink`, followLinkCmdImpl),
+		vscode.commands.registerCommand(`${extId}.createFile`, createFileCmdImpl)
+	);
+
+	// Create status bar
 	statusBarItem = createDefaultStatus();
 	statusBarItem.show();
 
+	// Start language server
 	client = await connectToServer(context, statusBarItem);
-
-	// Setup commands
-	let restartServerCmd = vscode.commands.registerCommand(`${extId}.restartServer`, async () => {
-		await stopClient(client);
-		updateStatus(statusBarItem, defaultStatus);
-
-		client = await connectToServer(context, statusBarItem);
-		if (client) {
-			context.subscriptions.push(client.start());
-		}
-	});
-	let showOutputCmd = vscode.commands.registerCommand(`${extId}.showOutputChannel`, () => {
-		if (client) {
-			let outputchannel = client.outputChannel;
-			outputchannel.show(true);
-		}
-	});
 	if (client) {
 		context.subscriptions.push(client.start());
 	}
-	context.subscriptions.push(
-		restartServerCmd,
-		showOutputCmd
-	);
 }
 
 async function findReferencesCmdImpl(data: FindReferencesData) {
