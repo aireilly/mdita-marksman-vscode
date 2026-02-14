@@ -416,10 +416,12 @@ function updateStatus(item: vscode.StatusBarItem, statusParams: StatusParams) {
 
 async function stopClient(client: LanguageClient | null) {
 	if (client) {
-		await client.stop();
-		client.outputChannel.dispose();
-		client.traceOutputChannel.dispose();
-}
+		try {
+			await client.stop();
+		} catch (e) {
+			console.error('Error stopping language client:', e);
+		}
+	}
 }
 
 export async function deactivate() {
